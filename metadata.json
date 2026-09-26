@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix أسطورة الملاعب 3D | Legendary Soccer Stadium",
+  "description": "لعبة كرة قدم ثلاثية الأبعاد بملعب أسطوري، إضاءة ليلية سينمائية، فيزياء حركة وركل واقعية، شباك تفاعلية، ومؤثرات احتفال أسطورية مع سكريبتات وأكواد برمجية كاملة.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
