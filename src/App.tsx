@@ -3,12 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
 import { SoccerCanvas, LightingConfig } from './game/SoccerCanvas';
 import { ScoreboardHUD } from './components/ScoreboardHUD';
 import { GoalCelebrationOverlay } from './components/GoalCelebrationOverlay';
 import { TouchVirtualControls } from './components/TouchVirtualControls';
-import { CodeInspectorModal } from './components/CodeInspectorModal';
 import { StadiumStudioModal } from './components/StadiumStudioModal';
 import { SuperstarsModal } from './components/SuperstarsModal';
 import { HelpModal } from './components/HelpModal';
@@ -27,7 +26,6 @@ import { StoreModal } from './components/StoreModal';
 import { SkillShopModal, OwnedSkill } from './components/SkillShopModal';
 import { MainMenu } from './components/MainMenu';
 import { ProfileModal } from './components/ProfileModal';
-import { aiService } from './services/aiService';
 import { getSuperstarsAsPlayers, playerToSuperstar } from './data/playerBridge';
 import { Player, PLAYERS } from './data/players';
 
@@ -41,6 +39,8 @@ const ensurePlayableRoster = (players: Player[]): Player[] => {
   });
   return [...players, ...additions];
 };
+
+const CodeInspectorModal = lazy(() => import('./components/CodeInspectorModal').then(module => ({ default: module.CodeInspectorModal })));
 
 export default function App() {
   const [stats, setStats] = useState<MatchStats | null>(null);
@@ -321,10 +321,11 @@ export default function App() {
       />
 
       {/* Code & Architecture Inspector Modal (Unity C# & Three.js TS) */}
-      <CodeInspectorModal
-        isOpen={isCodeModalOpen}
-        onClose={() => setIsCodeModalOpen(false)}
-      />
+      {isCodeModalOpen && (
+        <Suspense fallback={null}>
+          <CodeInspectorModal isOpen onClose={() => setIsCodeModalOpen(false)} />
+        </Suspense>
+      )}
 
       {/* Help & Controls Modal */}
       <HelpModal

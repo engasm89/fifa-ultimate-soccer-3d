@@ -108,11 +108,12 @@ export const SoccerCanvas: React.FC<SoccerCanvasProps> = ({
     camera.position.set(0, 8, 25);
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    const lowPowerDevice = window.matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency || 4) <= 4;
+    const renderer = new THREE.WebGLRenderer({ antialias: !lowPowerDevice, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, lowPowerDevice ? 1 : 1.5));
+    renderer.shadowMap.enabled = !lowPowerDevice;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.38; // Rich, vivid, crystal bright
     container.appendChild(renderer.domElement);
@@ -155,7 +156,15 @@ export const SoccerCanvas: React.FC<SoccerCanvasProps> = ({
 
     // 7. Game Manager
     const gameManager = new GameManager();
-    gameManager.onStatsChange = onStatsUpdate;
+    // Rendering and physics run at display rate; React only needs HUD state ~10 times/sec.
+    let lastHudUpdate = 0;
+    gameManager.onStatsChange = (stats) => {
+      const now = performance.now();
+      if (now - lastHudUpdate >= 100 || stats.isGoalScored || stats.isKickoffCountdown || stats.isMatchFinished) {
+        lastHudUpdate = now;
+        onStatsUpdate(stats);
+      }
+    };
     gameManagerRef.current = gameManager;
 
     // Play kickoff whistle
@@ -288,7 +297,8 @@ export const SoccerCanvas: React.FC<SoccerCanvasProps> = ({
     const animate = () => {
       animId = requestAnimationFrame(animate);
 
-      const dt = clock.getDelta();
+      // Keep player movement responsive during short frame drops without huge simulation jumps.
+      const dt = Math.min(clock.getDelta(), 0.08);
       const elapsedTime = clock.getElapsedTime();
 
       const vc = virtualControlsRef.current;

@@ -722,7 +722,8 @@ function createMergedSpectatorGeometry(): THREE.BufferGeometry {
  * With Mexican wave oscillation, flashlights, and team colors, seated on every grandstand tier!
  */
 function createCrowdSystem() {
-  const crowdCount = 5200;
+  // A dense crowd without forcing low-end devices to animate thousands of matrices each frame.
+  const crowdCount = 2800;
   const spectatorGeom = createMergedSpectatorGeometry();
 
   const crowdMat = new THREE.MeshStandardMaterial({
@@ -756,7 +757,7 @@ function createCrowdSystem() {
 
   // 1. Populate East Stand (Facing West: rotation.y = -Math.PI / 2)
   const eastStartX = 36.5;
-  const fansPerEastTier = 100;
+  const fansPerEastTier = 50;
   for (let t = 0; t < numTiers && idx < crowdCount; t++) {
     const x = eastStartX + t * tierRun;
     const y = 0.5 + t * tierRise + 0.15;
@@ -801,7 +802,7 @@ function createCrowdSystem() {
 
   // 3. Populate North Stand (Facing South: rotation.y = 0)
   const northStartZ = -55.0;
-  const fansPerNorthTier = 70;
+  const fansPerNorthTier = 35;
   for (let t = 0; t < numTiers && idx < crowdCount; t++) {
     const z = northStartZ - t * tierRun;
     const y = 0.5 + t * tierRise + 0.15;
@@ -912,9 +913,13 @@ function createCrowdSystem() {
 
   const crowdFlashes = new THREE.Points(flashGeom, flashMat);
 
+  let lastCrowdUpdate = 0;
   const updateCrowd = (time: number) => {
+    // 12fps crowd animation is visually smooth at stadium distance and frees CPU for gameplay.
+    if (time - lastCrowdUpdate < 1 / 12) return;
+    lastCrowdUpdate = time;
     const waveSpeed = 2.6;
-    for (let i = 0; i < crowdCount; i += 2) {
+    for (let i = 0; i < crowdCount; i += 6) {
       const basePos = basePositions[i];
       if (!basePos) continue;
 

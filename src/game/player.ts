@@ -573,7 +573,7 @@ export class SoccerPlayer {
     camForward?: THREE.Vector3,
     camRight?: THREE.Vector3
   ) {
-    const clampedDt = Math.min(dt, 0.05);
+    const clampedDt = Math.min(dt, 0.08);
 
     // If currently sliding / fallen on pitch:
     if (this.isFalling) {
