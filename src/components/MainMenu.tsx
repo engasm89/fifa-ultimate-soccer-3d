@@ -64,7 +64,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     {
       icon: <Package className="w-6 h-6" />,
       label: 'الباكات',
-      description: 'افتح باكات الموارد من دون بطاقات لاعبين',
+      description: 'افتح باكات للحصول على بطاقات لاعبين',
       action: onOpenPacks,
       color: 'from-amber-500 to-orange-600'
     },

@@ -177,6 +177,12 @@ export default function App() {
     setShowPlayerCollection(false);
   }, []);
 
+  const handlePackFound = useCallback((player: Player) => {
+    setMyPlayers(previous => [...previous, player]);
+    // The newly won footballer becomes the active player immediately.
+    setSelectedStar(playerToSuperstar(player));
+  }, []);
+
   const handleSpendGems = useCallback((amount: number) => {
     setGems(prev => Math.max(0, prev - amount));
   }, []);
@@ -346,6 +352,7 @@ export default function App() {
         pounds={pounds}
         onSpendGems={handleSpendGems}
         onSpendPounds={handleSpendPounds}
+        onPlayerFound={handlePackFound}
       />
 
       {/* Training Mode Modal */}

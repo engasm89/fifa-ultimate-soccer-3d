@@ -6,6 +6,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Package, Sparkles, Diamond, Coins, X, Trophy } from 'lucide-react';
+import { Player, PLAYERS } from '../data/players';
+import { PlayerCard3D } from './PlayerCard3D';
 
 interface PackOpening3DProps {
   isOpen: boolean;
@@ -14,6 +16,7 @@ interface PackOpening3DProps {
   pounds: number;
   onSpendGems: (amount: number) => void;
   onSpendPounds: (amount: number) => void;
+  onPlayerFound: (player: Player) => void;
 }
 
 type PackType = 'bronze' | 'silver' | 'gold' | 'premium';
@@ -25,10 +28,12 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
   pounds,
   onSpendGems,
   onSpendPounds,
+  onPlayerFound,
 }) => {
   const [selectedPack, setSelectedPack] = useState<PackType | null>(null);
   const [isOpening, setIsOpening] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [openedPlayer, setOpenedPlayer] = useState<Player | null>(null);
 
   const packs = [
     {
@@ -37,8 +42,8 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
       cost: 100,
       currency: 'gems' as const,
       color: 'from-amber-700 to-amber-900',
-      minRating: 75, // retained as pack metadata for future non-player rewards
-      maxRating: 85,
+      minRating: 112,
+      maxRating: 115,
       icon: <Package className="w-8 h-8 text-amber-400" />
     },
     {
@@ -47,8 +52,8 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
       cost: 250,
       currency: 'gems' as const,
       color: 'from-slate-400 to-slate-600',
-      minRating: 80,
-      maxRating: 90,
+      minRating: 116,
+      maxRating: 118,
       icon: <Sparkles className="w-8 h-8 text-slate-300" />
     },
     {
@@ -57,8 +62,8 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
       cost: 500,
       currency: 'gems' as const,
       color: 'from-yellow-400 to-amber-600',
-      minRating: 85,
-      maxRating: 95,
+      minRating: 119,
+      maxRating: 121,
       icon: <Diamond className="w-8 h-8 text-yellow-400 fill-yellow-400" />
     },
     {
@@ -67,8 +72,8 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
       cost: 50000,
       currency: 'pounds' as const,
       color: 'from-purple-500 to-pink-600',
-      minRating: 90,
-      maxRating: 120,
+      minRating: 120,
+      maxRating: 123,
       icon: <Trophy className="w-8 h-8 text-purple-400" />
     }
   ];
@@ -90,6 +95,12 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
     // Simulate opening delay
     await new Promise(resolve => setTimeout(resolve, 2000));
 
+    const candidates = PLAYERS.filter(player => player.rating >= pack.minRating && player.rating <= pack.maxRating);
+    // Every configured tier has players, but keep a safe fallback if the database changes.
+    const player = (candidates.length ? candidates : PLAYERS)[Math.floor(Math.random() * (candidates.length || PLAYERS.length))];
+    setOpenedPlayer(player);
+    onPlayerFound(player);
+
     setIsOpening(false);
     setShowCelebration(true);
 
@@ -97,6 +108,7 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
     setTimeout(() => {
       setShowCelebration(false);
       setSelectedPack(null);
+      setOpenedPlayer(null);
     }, 4000);
   };
 
@@ -126,7 +138,7 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">متجر الباكات</h2>
-                <p className="text-sm text-slate-400">الباكات تمنح موارد فقط ولا تحتوي على بطاقات لاعبين</p>
+                <p className="text-sm text-slate-400">افتح باكًا للحصول على بطاقة لاعب تنضم إلى فريقك</p>
               </div>
             </div>
             <button
@@ -190,7 +202,7 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
                   ))}
                 </div>
               </div>
-            ) : showCelebration ? (
+            ) : showCelebration && openedPlayer ? (
               <div className="flex flex-col items-center justify-center py-10 relative">
                 {/* 3D Celebration Effects */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -220,13 +232,21 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
                 </div>
 
                 <motion.div
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: 'spring', duration: 0.8 }}
+                  className="relative z-10 mb-5"
+                >
+                  <PlayerCard3D player={openedPlayer} size="lg" show3DEffects />
+                </motion.div>
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
                   className="text-center relative z-10"
                 >
-                  <h3 className="text-2xl font-black text-white mb-2">🎉 تم فتح الباكة!</h3>
-                  <p className="text-amber-400 font-bold text-lg">لا تحتوي الباكات على بطاقات لاعبين.</p>
+                  <h3 className="text-2xl font-black text-white mb-2">🎉 انضم لاعب جديد إلى فريقك!</h3>
+                  <p className="text-amber-400 font-bold text-lg">{openedPlayer.name} — OVR {openedPlayer.rating}</p>
                 </motion.div>
               </div>
             ) : (
@@ -279,7 +299,7 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
           {/* Footer */}
           <div className="p-4 border-t border-slate-700 bg-slate-800 text-center">
             <p className="text-xs text-slate-400">
-              احتمالات الحصول على لاعبين عالي المستوى تزيد مع الباكات الأغلى
+              كل باك يمنح بطاقة لاعب؛ الباكات الأغلى تزيد فرصة النجوم الأعلى تقييمًا.
             </p>
           </div>
         </motion.div>
