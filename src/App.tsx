@@ -29,7 +29,18 @@ import { MainMenu } from './components/MainMenu';
 import { ProfileModal } from './components/ProfileModal';
 import { aiService } from './services/aiService';
 import { getSuperstarsAsPlayers, playerToSuperstar } from './data/playerBridge';
-import { Player } from './data/players';
+import { Player, PLAYERS } from './data/players';
+
+const ensurePlayableRoster = (players: Player[]): Player[] => {
+  const required: Array<{ position: Player['position']; count: number }> = [
+    { position: 'GK', count: 1 }, { position: 'DEF', count: 1 }, { position: 'MID', count: 2 }, { position: 'FWD', count: 1 },
+  ];
+  const additions = required.flatMap(({ position, count }) => {
+    const missing = Math.max(0, count - players.filter(player => player.position === position).length);
+    return PLAYERS.filter(player => player.position === position && !players.some(existing => existing.id === player.id)).slice(0, missing);
+  });
+  return [...players, ...additions];
+};
 
 export default function App() {
   const [stats, setStats] = useState<MatchStats | null>(null);
@@ -112,13 +123,13 @@ export default function App() {
     if (savedPlayers) {
       try {
         const parsed = JSON.parse(savedPlayers);
-        setMyPlayers(parsed);
+        setMyPlayers(ensurePlayableRoster(parsed));
       } catch (e) {
         console.error("Failed to parse saved players", e);
       }
     } else {
-      // Initialize with superstars
-      setMyPlayers(getSuperstarsAsPlayers());
+      // A playable starter roster always includes every formation position.
+      setMyPlayers(ensurePlayableRoster(getSuperstarsAsPlayers()));
     }
 
     // Load user profile
@@ -336,11 +347,10 @@ export default function App() {
         onClose={() => setShowSquadSelector(false)}
         players={myPlayers}
         onStartMatch={(squad) => {
-          // Handle squad selection for 3D gameplay
-          console.log('Starting 3D match with squad:', squad);
-          // Award currency for squad selection
-          setGems(prev => prev + 25);
-          setPounds(prev => prev + 500);
+          // The forward selected in the formation becomes the controlled match player.
+          const controlledPlayer = squad.find(player => player.position === 'FWD') ?? squad[0];
+          setSelectedStar(playerToSuperstar(controlledPlayer));
+          setShowSquadSelector(false);
         }}
       />
 

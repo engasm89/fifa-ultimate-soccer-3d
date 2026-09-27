@@ -23,7 +23,15 @@ export const SquadSelector3D: React.FC<SquadSelector3DProps> = ({
   onStartMatch
 }) => {
   const [selectedSquad, setSelectedSquad] = useState<(Player | null)[]>(new Array(5).fill(null));
+  const [selectedSlot, setSelectedSlot] = useState(0);
   const formation = ['GK', 'DEF', 'MID', 'MID', 'FWD'];
+
+  const matchesSlot = (player: Player, slot: string) => {
+    if (slot === 'GK') return player.position === 'GK';
+    if (slot === 'DEF') return player.position === 'DEF';
+    if (slot === 'MID') return player.position === 'MID';
+    return player.position === 'FWD';
+  };
 
   const handlePlayerSelect = (player: Player, slotIndex: number) => {
     const newSquad = [...selectedSquad];
@@ -37,7 +45,11 @@ export const SquadSelector3D: React.FC<SquadSelector3DProps> = ({
     setSelectedSquad(newSquad);
   };
 
-  const canStartMatch = selectedSquad.filter(p => p !== null).length >= 3;
+  const canStartMatch = selectedSquad.every(player => player !== null);
+  const availablePlayers = players
+    .filter(player => matchesSlot(player, formation[selectedSlot]))
+    .filter(player => !selectedSquad.some(selected => selected?.id === player.id))
+    .sort((a, b) => b.rating - a.rating);
 
   const getTeamRating = () => {
     const validPlayers = selectedSquad.filter(p => p !== null) as Player[];
@@ -100,7 +112,7 @@ export const SquadSelector3D: React.FC<SquadSelector3DProps> = ({
               <div className="space-y-3">
                 {formation.map((position, idx) => (
                   <div key={idx} className="relative">
-                    <div className="flex items-center gap-3 bg-slate-700/50 rounded-lg p-3 border border-slate-600">
+                    <div onClick={() => setSelectedSlot(idx)} className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${selectedSlot === idx ? 'border-amber-400 bg-amber-400/10' : 'border-slate-600 bg-slate-700/50'}`}>
                       <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center font-black text-white text-xs">
                         {position}
                       </div>
@@ -135,14 +147,13 @@ export const SquadSelector3D: React.FC<SquadSelector3DProps> = ({
               <h3 className="text-lg font-bold text-white mb-4">اللاعبون المتاحون</h3>
               
               <div className="grid grid-cols-2 gap-3">
-                {players.slice(0, 20).map((player) => (
+                {availablePlayers.map((player) => (
                   <div
                     key={player.id}
                     onClick={() => {
-                      const emptySlot = selectedSquad.findIndex(p => p === null);
-                      if (emptySlot !== -1) {
-                        handlePlayerSelect(player, emptySlot);
-                      }
+                      handlePlayerSelect(player, selectedSlot);
+                      const nextEmptySlot = selectedSquad.findIndex((selected, index) => index !== selectedSlot && selected === null);
+                      if (nextEmptySlot !== -1) setSelectedSlot(nextEmptySlot);
                     }}
                     className="cursor-pointer"
                   >
@@ -153,6 +164,7 @@ export const SquadSelector3D: React.FC<SquadSelector3DProps> = ({
                     />
                   </div>
                 ))}
+                {availablePlayers.length === 0 && <p className="col-span-2 py-8 text-center text-sm text-slate-500">لا يوجد لاعب مناسب لهذا المركز في مجموعتك.</p>}
               </div>
             </div>
           </div>
@@ -160,12 +172,12 @@ export const SquadSelector3D: React.FC<SquadSelector3DProps> = ({
           {/* Footer */}
           <div className="p-4 border-t border-slate-700 bg-slate-800 flex justify-between items-center">
             <p className="text-xs text-slate-400">
-              {selectedSquad.filter(p => p !== null).length}/5 لاعبين مختارين
+              {selectedSquad.filter(p => p !== null).length}/5 لاعبين مختارين — اختر لاعبًا مناسبًا لكل مركز
             </p>
             <button
               onClick={() => {
                 const validPlayers = selectedSquad.filter(p => p !== null) as Player[];
-                if (validPlayers.length >= 3) {
+                if (validPlayers.length === 5) {
                   onStartMatch(validPlayers);
                   onClose();
                 }

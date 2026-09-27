@@ -316,7 +316,7 @@ export class SoccerPlayer {
     headMesh.add(headBase);
 
     // Hair cap
-    const hairGeom = new THREE.SphereGeometry(0.162, 16, 14, 0, Math.PI * 2, 0, Math.PI / 1.7);
+    const hairGeom = new THREE.SphereGeometry(0.162, 16, 14, 0, Math.PI * 2, 0, Math.PI / 2.35);
     hairGeom.scale(0.94, 1.09, 1.02);
     const hairMesh = new THREE.Mesh(hairGeom, hairMat);
     hairMesh.position.set(0, 0.02, -0.01);
@@ -579,6 +579,9 @@ export class SoccerPlayer {
     if (this.isFalling) {
       this.velocity.multiplyScalar(0.91);
       this.position.add(this.velocity.clone().multiplyScalar(clampedDt));
+      this.position.y = 0;
+      this.position.x = THREE.MathUtils.clamp(this.position.x, -PITCH_WIDTH / 2 + 1.2, PITCH_WIDTH / 2 - 1.2);
+      this.position.z = THREE.MathUtils.clamp(this.position.z, -PITCH_LENGTH / 2 + 1.2, PITCH_LENGTH / 2 - 1.2);
       this.group.position.copy(this.position);
 
       if (this.fallType === 'slide_tackle' && this.fallTimer > 0.25) {
@@ -805,18 +808,18 @@ export class SoccerPlayer {
         this.bodyMesh.rotation.set(0, 0, 0);
       } else {
         if (this.fallType === 'slide_tackle') {
-          this.bodyMesh.position.y = -0.55;
+          this.bodyMesh.position.y = -0.12;
           this.bodyMesh.rotation.x = -Math.PI / 2.7;
           this.bodyMesh.rotation.z = 0.35;
           this.rightUpperLeg.rotation.x = -1.2;
           this.leftUpperLeg.rotation.x = 0.6;
         } else if (this.fallType === 'celebration') {
-          this.bodyMesh.position.y = -0.42;
+          this.bodyMesh.position.y = -0.1;
           this.bodyMesh.rotation.x = -0.35;
           this.leftArm.rotation.x = -2.2;
           this.rightArm.rotation.x = -2.2;
         } else {
-          this.bodyMesh.position.y = -0.65;
+          this.bodyMesh.position.y = -0.14;
           this.bodyMesh.rotation.x = -Math.PI / 2.2;
           this.bodyMesh.rotation.z = Math.sin(this.fallTimer * 8) * 0.2;
         }

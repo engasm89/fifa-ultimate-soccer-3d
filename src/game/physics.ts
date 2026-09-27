@@ -9,7 +9,7 @@
  */
 
 import * as THREE from 'three';
-import { GOAL_HEIGHT, GOAL_WIDTH, PITCH_LENGTH } from './stadium';
+import { GOAL_HEIGHT, GOAL_WIDTH, PITCH_LENGTH, PITCH_WIDTH } from './stadium';
 import { soundEngine } from './audio';
 import { ClothGoalNet } from './clothNet';
 import { getWorldCup2026BallTextures, WorldCupBallEdition } from './worldCupBall2026';
@@ -150,7 +150,7 @@ export class SoccerBall {
   /**
    * Physics Integration Step
    */
-  public update(dt: number, northNet: ClothGoalNet, southNet: ClothGoalNet): { goalScored: 'north' | 'south' | null } {
+  public update(dt: number, northNet: ClothGoalNet, southNet: ClothGoalNet): { goalScored: 'north' | 'south' | null; touchlineOut: boolean } {
     const clampedDt = Math.min(dt, 0.05);
 
     // 1. Magnus Effect: Ball curves in air due to spin
@@ -235,6 +235,9 @@ export class SoccerBall {
       }
     }
 
+    // The ball is out once it completely crosses a touchline.
+    const touchlineOut = Math.abs(this.position.x) > PITCH_WIDTH / 2 + BALL_RADIUS * 0.25;
+
     // 8. Update Three.js mesh positions
     this.mesh.position.copy(this.position);
 
@@ -251,7 +254,7 @@ export class SoccerBall {
     // 10. Goal Detection Trigger
     const goalScored = this.checkGoalScored();
 
-    return { goalScored };
+    return { goalScored, touchlineOut };
   }
 
   /**

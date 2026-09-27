@@ -147,7 +147,7 @@ export class AIPlayer5v5 {
 
     // Hair
     const hairMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(0.18 + (playerVariant === 2 ? 0.025 : 0), 16, 16, 0, Math.PI * 2, 0, playerVariant === 1 ? Math.PI / 1.45 : Math.PI / 2),
+      new THREE.SphereGeometry(0.18 + (playerVariant === 2 ? 0.025 : 0), 16, 16, 0, Math.PI * 2, 0, playerVariant === 1 ? Math.PI / 1.8 : Math.PI / 2.45),
       new THREE.MeshStandardMaterial({ color: hairColors[playerVariant], roughness: 0.9 })
     );
     hairMesh.position.y = 1.64;
@@ -234,7 +234,8 @@ export class AIPlayer5v5 {
     ball: SoccerBall,
     userPlayerPos: THREE.Vector3,
     allPlayers: AIPlayer5v5[],
-    tacticsMode: TacticsMode = 'all_out_attack'
+    tacticsMode: TacticsMode = 'all_out_attack',
+    isPrimaryPresser: boolean = false
   ) {
     const clampedDt = Math.min(dt, 0.05);
 
@@ -322,8 +323,8 @@ export class AIPlayer5v5 {
         const isBallInMyHalf = isHome ? ball.position.z > 0 : ball.position.z < 0;
         const isBallNearMe = distToBall < 18;
 
-        if (isBallNearMe && !this.hasBall) {
-          // Pressure / chase ball
+        if (isPrimaryPresser && isBallNearMe && !this.hasBall) {
+          // One nearest outfield player presses; the rest keep the formation.
           targetPos.copy(ball.position);
           targetPos.y = 0;
         } else {
@@ -446,8 +447,13 @@ export class Match5v5System {
 
   public update(dt: number, ball: SoccerBall, userPlayerPos: THREE.Vector3) {
     const all = [...this.homePlayers, ...this.awayPlayers];
-    this.homePlayers.forEach((p) => p.update(dt, ball, userPlayerPos, all, this.tacticsMode));
-    this.awayPlayers.forEach((p) => p.update(dt, ball, userPlayerPos, all, this.tacticsMode));
+    const closestOutfield = (players: AIPlayer5v5[]) => players
+      .filter(player => player.role !== 'goalkeeper')
+      .reduce((closest, player) => player.position.distanceToSquared(ball.position) < closest.position.distanceToSquared(ball.position) ? player : closest);
+    const homePresser = closestOutfield(this.homePlayers);
+    const awayPresser = closestOutfield(this.awayPlayers);
+    this.homePlayers.forEach((p) => p.update(dt, ball, userPlayerPos, all, this.tacticsMode, p === homePresser));
+    this.awayPlayers.forEach((p) => p.update(dt, ball, userPlayerPos, all, this.tacticsMode, p === awayPresser));
   }
 
   /**

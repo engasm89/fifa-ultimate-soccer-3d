@@ -9,7 +9,7 @@ import { SoccerBall } from './physics';
 import { SoccerPlayer } from './player';
 import { GoalkeeperAI, OpponentDefenderAI } from './ai';
 import { FireworksManager } from './fireworks';
-import { StadiumSetup } from './stadium';
+import { PITCH_LENGTH, PITCH_WIDTH, StadiumSetup } from './stadium';
 import { soundEngine } from './audio';
 
 export type CameraMode = 'third_person' | 'broadcast' | 'behind_goal' | 'free_orbit';
@@ -115,7 +115,11 @@ export class GameManager {
     }
 
     // Goal scored trigger handling
-    const goalScored = ball.update(clampedDt, stadium.northNet, stadium.southNet).goalScored;
+    const ballResult = ball.update(clampedDt, stadium.northNet, stadium.southNet);
+    const goalScored = ballResult.goalScored;
+    if (ballResult.touchlineOut && !this.isGoalScored && !this.isKickoffCountdown) {
+      this.restartFromTouchline(ball);
+    }
 
     if (goalScored && !this.isGoalScored) {
       this.handleGoalScored(goalScored, ball, stadium, fireworks);
@@ -194,6 +198,15 @@ export class GameManager {
     stadium.triggerStrobe();
     fireworks.triggerCelebration(goal === 'north' ? -52.5 : 52.5);
     soundEngine.playGoalRoar();
+  }
+
+  /** Restarts play from the sideline for the team that did not put the ball out. */
+  private restartFromTouchline(ball: SoccerBall) {
+    const side = Math.sign(ball.position.x) || 1;
+    const z = THREE.MathUtils.clamp(ball.position.z, -PITCH_LENGTH / 2 + 4, PITCH_LENGTH / 2 - 4);
+    const recipient = ball.lastKicker === 'player' ? 'opponent' : 'player';
+    ball.reset(side * (PITCH_WIDTH / 2 - 0.55), z);
+    ball.applyKick(new THREE.Vector3(-side * 9, 1.4, recipient === 'opponent' ? 2.8 : -2.8), 0, recipient);
   }
 
   private startKickoffSequence(
