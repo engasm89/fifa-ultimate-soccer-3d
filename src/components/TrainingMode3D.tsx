@@ -57,6 +57,7 @@ export const TrainingMode3D: React.FC<TrainingMode3DProps> = ({
   };
 
   const endGame = () => {
+    if (gameOver) return;
     setIsActive(false);
     setGameOver(true);
     

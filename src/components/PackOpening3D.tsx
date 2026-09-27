@@ -6,9 +6,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Package, Sparkles, Diamond, Coins, X, Trophy } from 'lucide-react';
-import { Player } from '../data/players';
-import { PlayerCard3D } from './PlayerCard3D';
-import { PLAYERS } from '../data/players';
 
 interface PackOpening3DProps {
   isOpen: boolean;
@@ -17,7 +14,6 @@ interface PackOpening3DProps {
   pounds: number;
   onSpendGems: (amount: number) => void;
   onSpendPounds: (amount: number) => void;
-  onPlayerFound: (player: Player) => void;
 }
 
 type PackType = 'bronze' | 'silver' | 'gold' | 'premium';
@@ -29,11 +25,9 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
   pounds,
   onSpendGems,
   onSpendPounds,
-  onPlayerFound
 }) => {
   const [selectedPack, setSelectedPack] = useState<PackType | null>(null);
   const [isOpening, setIsOpening] = useState(false);
-  const [openedPlayer, setOpenedPlayer] = useState<Player | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
 
   const packs = [
@@ -43,7 +37,7 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
       cost: 100,
       currency: 'gems' as const,
       color: 'from-amber-700 to-amber-900',
-      minRating: 75,
+      minRating: 75, // retained as pack metadata for future non-player rewards
       maxRating: 85,
       icon: <Package className="w-8 h-8 text-amber-400" />
     },
@@ -96,21 +90,12 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
     // Simulate opening delay
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Get random player based on pack tier
-    const eligiblePlayers = PLAYERS.filter(
-      p => p.rating >= pack.minRating && p.rating <= pack.maxRating
-    );
-    const randomPlayer = eligiblePlayers[Math.floor(Math.random() * eligiblePlayers.length)];
-
-    setOpenedPlayer(randomPlayer);
-    onPlayerFound(randomPlayer);
     setIsOpening(false);
     setShowCelebration(true);
 
     // Auto-hide celebration after 4 seconds
     setTimeout(() => {
       setShowCelebration(false);
-      setOpenedPlayer(null);
       setSelectedPack(null);
     }, 4000);
   };
@@ -141,7 +126,7 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
               </div>
               <div>
                 <h2 className="text-xl font-black text-white">متجر الباكات</h2>
-                <p class="text-sm text-slate-400">افتح الباكات للحصول على لاعبين جدد</p>
+                <p className="text-sm text-slate-400">الباكات تمنح موارد فقط ولا تحتوي على بطاقات لاعبين</p>
               </div>
             </div>
             <button
@@ -205,7 +190,7 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
                   ))}
                 </div>
               </div>
-            ) : showCelebration && openedPlayer ? (
+            ) : showCelebration ? (
               <div className="flex flex-col items-center justify-center py-10 relative">
                 {/* 3D Celebration Effects */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -235,25 +220,13 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
                 </div>
 
                 <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", duration: 0.8 }}
-                  className="mb-6 relative z-10"
-                >
-                  <PlayerCard3D
-                    player={openedPlayer}
-                    size="lg"
-                    show3DEffects={true}
-                  />
-                </motion.div>
-                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
                   className="text-center relative z-10"
                 >
-                  <h3 className="text-2xl font-black text-white mb-2">🎉 حصلت على لاعب جديد!</h3>
-                  <p className="text-amber-400 font-bold text-lg">{openedPlayer.name} - OVR {openedPlayer.rating}</p>
+                  <h3 className="text-2xl font-black text-white mb-2">🎉 تم فتح الباكة!</h3>
+                  <p className="text-amber-400 font-bold text-lg">لا تحتوي الباكات على بطاقات لاعبين.</p>
                 </motion.div>
               </div>
             ) : (

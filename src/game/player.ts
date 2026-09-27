@@ -66,6 +66,8 @@ export class SoccerPlayer {
   private hairMat: THREE.MeshStandardMaterial;
   private bootMat: THREE.MeshStandardMaterial;
   private aimArrow: THREE.ArrowHelper;
+  private selectionRing: THREE.Mesh;
+  private identityBadge: THREE.Sprite;
 
   // Locomotion tuning
   private walkSpeed: number = 6.2;
@@ -96,6 +98,33 @@ export class SoccerPlayer {
     this.hairMat = kit.hairMat;
     this.bootMat = kit.bootMat;
 
+    // Clear ownership markers without changing the team kit.
+    const ringGeometry = new THREE.RingGeometry(0.48, 0.58, 32);
+    const ringMaterial = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false });
+    this.selectionRing = new THREE.Mesh(ringGeometry, ringMaterial);
+    this.selectionRing.rotation.x = -Math.PI / 2;
+    this.selectionRing.position.y = 0.035;
+    this.group.add(this.selectionRing);
+    const selectionLight = new THREE.PointLight(0x38bdf8, 1.2, 4.5);
+    selectionLight.position.set(0, 0.7, 0);
+    this.group.add(selectionLight);
+
+    const badgeCanvas = document.createElement('canvas');
+    badgeCanvas.width = 512;
+    badgeCanvas.height = 128;
+    const badgeContext = badgeCanvas.getContext('2d')!;
+    badgeContext.fillStyle = 'rgba(2, 6, 23, .85)';
+    badgeContext.roundRect(8, 12, 496, 104, 44);
+    badgeContext.fill();
+    badgeContext.fillStyle = '#ffffff';
+    badgeContext.font = '900 42px sans-serif';
+    badgeContext.textAlign = 'center';
+    badgeContext.fillText(`${this.superstar.nameAr}  #${this.superstar.jerseyNumber}`, 256, 75);
+    this.identityBadge = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(badgeCanvas), transparent: true, depthTest: false }));
+    this.identityBadge.scale.set(1.55, 0.39, 1);
+    this.identityBadge.position.set(0, 2.35, 0);
+    this.group.add(this.identityBadge);
+
     // Pitch aiming indicator arrow
     this.aimArrow = new THREE.ArrowHelper(
       new THREE.Vector3(0, 0, -1),
@@ -117,9 +146,7 @@ export class SoccerPlayer {
     this.sprintSpeed = star.traits.sprintSpeed;
     this.turnSpeed = star.traits.turnSpeed;
 
-    // Adjust theme color and jersey number
-    this.jerseyMat.color.set(star.themeColor);
-    this.bootMat.color.set(star.secondaryColor);
+    // The selected footballer never changes the team kit colours.
 
     // Superstar-specific skin & hair customization
     if (star.id === 'mbappe') {
@@ -155,6 +182,24 @@ export class SoccerPlayer {
     const numTex = new THREE.CanvasTexture(canvas);
     (this.badgeMesh.material as THREE.MeshBasicMaterial).map = numTex;
     (this.badgeMesh.material as THREE.MeshBasicMaterial).needsUpdate = true;
+    this.updateIdentityBadge();
+  }
+
+  private updateIdentityBadge() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = 'rgba(2, 6, 23, .85)';
+    ctx.roundRect(8, 12, 496, 104, 44);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 42px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${this.superstar.nameAr}  #${this.superstar.jerseyNumber}`, 256, 75);
+    (this.identityBadge.material as THREE.SpriteMaterial).map?.dispose();
+    (this.identityBadge.material as THREE.SpriteMaterial).map = new THREE.CanvasTexture(canvas);
+    (this.identityBadge.material as THREE.SpriteMaterial).needsUpdate = true;
   }
 
   /**
@@ -170,13 +215,13 @@ export class SoccerPlayer {
 
     // Materials
     const jerseyMat = new THREE.MeshStandardMaterial({
-      color: isPlayerTeam ? 0x0284c7 : 0xdc2626, // Royal Blue or Crimson
+      color: isPlayerTeam ? 0x123b78 : 0x7f1d1d, // Dark blue home / dark red away
       roughness: 0.55,
       metalness: 0.1,
     });
 
     const shortsMat = new THREE.MeshStandardMaterial({
-      color: isPlayerTeam ? 0x0f172a : 0x1e1b4b,
+      color: isPlayerTeam ? 0xf8fafc : 0x111827, // White home shorts / black away shorts
       roughness: 0.6,
     });
 
@@ -192,7 +237,7 @@ export class SoccerPlayer {
     });
 
     const bootMat = new THREE.MeshStandardMaterial({
-      color: 0xfacc15, // Golden / Neon Cleats
+      color: 0x38bdf8, // Team-blue cleats
       roughness: 0.35,
       metalness: 0.4,
     });

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { SoccerCanvas, LightingConfig } from './game/SoccerCanvas';
 import { ScoreboardHUD } from './components/ScoreboardHUD';
 import { GoalCelebrationOverlay } from './components/GoalCelebrationOverlay';
@@ -24,6 +24,7 @@ import { SquadSelector3D } from './components/SquadSelector3D';
 import { PackOpening3D } from './components/PackOpening3D';
 import { TrainingMode3D } from './components/TrainingMode3D';
 import { StoreModal } from './components/StoreModal';
+import { SkillShopModal, OwnedSkill } from './components/SkillShopModal';
 import { MainMenu } from './components/MainMenu';
 import { ProfileModal } from './components/ProfileModal';
 import { aiService } from './services/aiService';
@@ -53,6 +54,9 @@ export default function App() {
   const [showPackOpening, setShowPackOpening] = useState<boolean>(false);
   const [showTrainingMode, setShowTrainingMode] = useState<boolean>(false);
   const [showStore, setShowStore] = useState<boolean>(false);
+  const [showSkillShop, setShowSkillShop] = useState<boolean>(false);
+  const [ownedSkills, setOwnedSkills] = useState<OwnedSkill[]>([]);
+  const rewardedMatchRef = useRef<number | null>(null);
   const [showMainMenu, setShowMainMenu] = useState<boolean>(false);
   const [showProfile, setShowProfile] = useState<boolean>(false);
 
@@ -98,6 +102,11 @@ export default function App() {
     const savedPounds = localStorage.getItem('fifa_pounds');
     if (savedPounds) setPounds(parseInt(savedPounds));
 
+    const savedSkills = localStorage.getItem('fifa_owned_skills');
+    if (savedSkills) {
+      try { setOwnedSkills(JSON.parse(savedSkills)); } catch { localStorage.removeItem('fifa_owned_skills'); }
+    }
+
     // Load player collection
     const savedPlayers = localStorage.getItem('fifa_players');
     if (savedPlayers) {
@@ -128,21 +137,18 @@ export default function App() {
     localStorage.setItem('fifa_gems', gems.toString());
     localStorage.setItem('fifa_pounds', pounds.toString());
     localStorage.setItem('fifa_players', JSON.stringify(myPlayers));
+    localStorage.setItem('fifa_owned_skills', JSON.stringify(ownedSkills));
     if (user) localStorage.setItem('fifa_user', JSON.stringify(user));
-  }, [gems, pounds, myPlayers, user]);
+  }, [gems, pounds, myPlayers, ownedSkills, user]);
 
-  // Award currency for goals and match events
+  // A completed win grants exactly 100 gems, once per match.
   useEffect(() => {
-    if (stats) {
-      // Award gems for goals (50 gems per goal)
-      if (stats.playerGoals > 0) {
-        const goalReward = stats.playerGoals * 50;
-        setGems(prev => prev + goalReward);
-      }
-      // Award pounds for match completion
-      if (stats.matchTime > 0) {
-        setPounds(prev => prev + 1000);
-      }
+    if (stats?.isMatchFinished && stats.homeScore > stats.awayScore && rewardedMatchRef.current !== stats.matchMinutes) {
+      setGems(prev => prev + 100);
+      rewardedMatchRef.current = stats.matchMinutes;
+    }
+    if (stats && stats.matchMinutes === 0) {
+      rewardedMatchRef.current = null;
     }
   }, [stats]);
 
@@ -171,10 +177,6 @@ export default function App() {
     setShowPlayerCollection(false);
   }, []);
 
-  const handlePackFound = useCallback((player: Player) => {
-    setMyPlayers(prev => [...prev, player]);
-  }, []);
-
   const handleSpendGems = useCallback((amount: number) => {
     setGems(prev => Math.max(0, prev - amount));
   }, []);
@@ -186,7 +188,6 @@ export default function App() {
   const handleTrainingFinish = useCallback((earnedGems: number, earnedPounds: number) => {
     setGems(prev => prev + earnedGems);
     setPounds(prev => prev + earnedPounds);
-    setShowTrainingMode(false);
   }, []);
 
   const handlePurchase = useCallback((item: { name: string; price: string; amount: number; type: 'gems' | 'pounds' }) => {
@@ -198,6 +199,12 @@ export default function App() {
     // In a real app, this would process payment
     console.log('Purchase completed:', item);
   }, []);
+
+  const handleBuySkill = useCallback((skill: OwnedSkill) => {
+    if (gems < 100 || ownedSkills.some(item => item.id === skill.id)) return;
+    setGems(prev => prev - 100);
+    setOwnedSkills(prev => [...prev, skill]);
+  }, [gems, ownedSkills]);
 
   const handleLogin = useCallback((name: string, facebook: string) => {
     setUser({ name, facebook });
@@ -238,6 +245,7 @@ export default function App() {
         onOpenPackOpening={() => setShowPackOpening(true)}
         onOpenTrainingMode={() => setShowTrainingMode(true)}
         onOpenStore={() => setShowStore(true)}
+        onOpenSkillShop={() => setShowSkillShop(true)}
         onOpenMainMenu={() => setShowMainMenu(true)}
         onOpenHelpModal={() => setIsHelpModalOpen(true)}
         onManualKickoff={handleManualKickoff}
@@ -338,7 +346,6 @@ export default function App() {
         pounds={pounds}
         onSpendGems={handleSpendGems}
         onSpendPounds={handleSpendPounds}
-        onPlayerFound={handlePackFound}
       />
 
       {/* Training Mode Modal */}
@@ -355,6 +362,14 @@ export default function App() {
         gems={gems}
         pounds={pounds}
         onPurchase={handlePurchase}
+      />
+
+      <SkillShopModal
+        isOpen={showSkillShop}
+        onClose={() => setShowSkillShop(false)}
+        gems={gems}
+        ownedSkills={ownedSkills}
+        onBuy={handleBuySkill}
       />
 
       {/* Main Menu */}
@@ -380,6 +395,10 @@ export default function App() {
         onOpenStore={() => {
           setShowMainMenu(false);
           setShowStore(true);
+        }}
+        onOpenSkills={() => {
+          setShowMainMenu(false);
+          setShowSkillShop(true);
         }}
         onOpenSettings={() => {
           setShowMainMenu(false);

@@ -96,10 +96,13 @@ export class AIPlayer5v5 {
     const isHome = team === 'home';
     const isGoalie = this.role === 'goalkeeper';
 
-    const jerseyColor = isGoalie ? (isHome ? 0x06b6d4 : 0x10b981) : (isHome ? 0xeab308 : 0xef4444);
-    const shortsColor = isHome ? 0x1e3a8a : 0x1e293b;
-    const skinColor = 0xd4a373;
-    const bootColor = isHome ? 0x10b981 : 0xf97316;
+    const playerVariant = (num + (isHome ? 0 : 3)) % 4;
+    const skinTones = [0x8d5524, 0xc68642, 0xd4a373, 0xf1c27d];
+    const hairColors = [0x17120d, 0x34251a, 0x6b3e26, 0x141414];
+    const jerseyColor = isGoalie ? (isHome ? 0xf59e0b : 0x16a34a) : (isHome ? 0x123b78 : 0x7f1d1d);
+    const shortsColor = isHome ? 0xf8fafc : 0x111827;
+    const skinColor = skinTones[playerVariant];
+    const bootColor = isHome ? 0x38bdf8 : 0xfacc15;
 
     const jerseyMat = new THREE.MeshStandardMaterial({ color: jerseyColor, roughness: 0.5 });
     const shortsMat = new THREE.MeshStandardMaterial({ color: shortsColor, roughness: 0.6 });
@@ -107,7 +110,7 @@ export class AIPlayer5v5 {
     const bootMat = new THREE.MeshStandardMaterial({ color: bootColor, roughness: 0.3 });
 
     // Torso
-    const torsoGeom = new THREE.BoxGeometry(0.55, 0.65, 0.3);
+    const torsoGeom = new THREE.CylinderGeometry(0.27 + playerVariant * 0.008, 0.24, 0.65, 12);
     const torsoMesh = new THREE.Mesh(torsoGeom, jerseyMat);
     torsoMesh.position.y = 1.15;
     torsoMesh.castShadow = true;
@@ -144,11 +147,12 @@ export class AIPlayer5v5 {
 
     // Hair
     const hairMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(0.19, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.9 })
+      new THREE.SphereGeometry(0.18 + (playerVariant === 2 ? 0.025 : 0), 16, 16, 0, Math.PI * 2, 0, playerVariant === 1 ? Math.PI / 1.45 : Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: hairColors[playerVariant], roughness: 0.9 })
     );
     hairMesh.position.y = 1.64;
     bodyMesh.add(hairMesh);
+    bodyMesh.scale.set(0.92 + playerVariant * 0.055, 0.96 + (playerVariant === 3 ? 0.1 : 0), 0.92 + playerVariant * 0.035);
 
     // Legs
     const createLeg = (isRight: boolean) => {

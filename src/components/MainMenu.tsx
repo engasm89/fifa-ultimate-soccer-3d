@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Users, Package, Target, ShoppingBag, Settings, HelpCircle, Play, User } from 'lucide-react';
+import { Trophy, Users, Package, Target, ShoppingBag, Settings, HelpCircle, Play, User, WandSparkles } from 'lucide-react';
 
 interface MainMenuProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ interface MainMenuProps {
   onOpenPacks: () => void;
   onOpenTraining: () => void;
   onOpenStore: () => void;
+  onOpenSkills?: () => void;
   onOpenSettings: () => void;
   onOpenHelp: () => void;
   onOpenProfile: () => void;
@@ -29,6 +30,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onOpenPacks,
   onOpenTraining,
   onOpenStore,
+  onOpenSkills,
   onOpenSettings,
   onOpenHelp,
   onOpenProfile,
@@ -62,7 +64,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     {
       icon: <Package className="w-6 h-6" />,
       label: 'الباكات',
-      description: 'افتح الباكات للحصول على لاعبين',
+      description: 'افتح باكات الموارد من دون بطاقات لاعبين',
       action: onOpenPacks,
       color: 'from-amber-500 to-orange-600'
     },
@@ -80,6 +82,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       action: onOpenStore,
       color: 'from-green-500 to-teal-600'
     },
+    ...(onOpenSkills ? [{ icon: <WandSparkles className="w-6 h-6" />, label: 'متجر المهارات', description: 'اشترِ المهارات بـ100 جوهرة', action: onOpenSkills, color: 'from-cyan-500 to-blue-600' }] : []),
     {
       icon: <Settings className="w-6 h-6" />,
       label: 'الإعدادات',

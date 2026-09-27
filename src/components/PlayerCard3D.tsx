@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
-import { Player } from '../data/players';
+import { Player, getCleanPlayerImage } from '../data/players';
 import { SuperstarProfile } from '../game/superstars';
 import { playerToSuperstar } from '../data/playerBridge';
 import { Star, Trophy, Shield, Zap } from 'lucide-react';
@@ -111,10 +111,8 @@ export const PlayerCard3D: React.FC<PlayerCard3DProps> = ({
           <span className="text-lg font-black text-white">{superstar.rating}</span>
         </div>
 
-        {/* Player Avatar/Emoji */}
-        <div className="text-4xl mb-2 filter drop-shadow-lg">
-          {superstar.avatarEmoji}
-        </div>
+        {/* Real player portrait, with the game avatar as a safe fallback. */}
+        <img src={getCleanPlayerImage(player as Player)} alt={superstar.nameEn} className="h-20 w-20 object-contain object-bottom drop-shadow-xl" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
 
         {/* Player Name */}
         <div className="text-center">

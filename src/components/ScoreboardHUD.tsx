@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { CameraMode, MatchStats } from '../game/GameManager';
-import { Volume2, VolumeX, Camera, RotateCcw, Code2, HelpCircle, Flame, Shield, Trophy, Star, Swords, Diamond, Coins, Users, Package, Target, ShoppingBag, Grid } from 'lucide-react';
+import { Volume2, VolumeX, Camera, RotateCcw, Code2, HelpCircle, Flame, Shield, Trophy, Star, Swords, Diamond, Coins, Users, Package, Target, ShoppingBag, Grid, WandSparkles } from 'lucide-react';
 import { soundEngine } from '../game/audio';
 import { SuperstarProfile } from '../game/superstars';
 import { TacticsMode } from '../game/match5v5';
@@ -26,6 +26,7 @@ interface ScoreboardHUDProps {
   onOpenPackOpening?: () => void;
   onOpenTrainingMode?: () => void;
   onOpenStore?: () => void;
+  onOpenSkillShop?: () => void;
   onOpenMainMenu?: () => void;
   onManualKickoff: () => void;
   selectedStar: SuperstarProfile;
@@ -50,6 +51,7 @@ export const ScoreboardHUD: React.FC<ScoreboardHUDProps> = ({
   onOpenPackOpening,
   onOpenTrainingMode,
   onOpenStore,
+  onOpenSkillShop,
   onOpenMainMenu,
   onManualKickoff,
   selectedStar,
@@ -85,6 +87,17 @@ export const ScoreboardHUD: React.FC<ScoreboardHUDProps> = ({
 
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-3 md:p-5 select-none font-sans">
+      {/* Kept on opposite edges so the pitch remains unobstructed. */}
+      <div className="pointer-events-auto absolute top-3 left-3 md:top-5 md:left-5 flex items-center gap-2 bg-blue-950/85 backdrop-blur px-3 py-2 rounded-lg border border-blue-500/40 shadow-lg">
+        <Diamond className="w-4 h-4 text-blue-400 fill-blue-400" />
+        <span className="text-[10px] text-blue-200 font-black">الجواهر</span>
+        <span className="text-sm font-black text-white">{gems.toLocaleString()}</span>
+      </div>
+      <div className="pointer-events-auto absolute top-3 right-3 md:top-5 md:right-5 flex items-center gap-2 bg-rose-950/85 backdrop-blur px-3 py-2 rounded-lg border border-rose-500/40 shadow-lg">
+        <Coins className="w-4 h-4 text-rose-400 fill-rose-400" />
+        <span className="text-[10px] text-rose-200 font-black">الفلوس</span>
+        <span className="text-sm font-black text-white">{pounds.toLocaleString()}</span>
+      </div>
       {/* Top Header & Scoreboard Bar */}
       <div className="flex flex-col items-center gap-2 w-full">
         {/* Main Broadcast Scoreboard */}
@@ -147,26 +160,8 @@ export const ScoreboardHUD: React.FC<ScoreboardHUDProps> = ({
           </div>
         </header>
 
-        {/* Currency Display Bar (Integrated from Mobile Simulator) */}
-        <div className="flex items-center justify-center gap-4 bg-slate-950/80 backdrop-blur px-4 py-2 rounded-lg border border-slate-800 mb-2">
-          <div className="flex items-center gap-2 bg-blue-900/20 px-3 py-1.5 rounded-lg border border-blue-500/30">
-            <Diamond className="w-4 h-4 text-blue-400 fill-blue-400" />
-            <div className="flex flex-col">
-              <span className="text-[8px] text-blue-300 font-bold uppercase tracking-wider">GEMS</span>
-              <span className="text-sm font-black text-white">{gems.toLocaleString()}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 bg-red-900/20 px-3 py-1.5 rounded-lg border border-red-500/30">
-            <Coins className="w-4 h-4 text-red-400 fill-red-400" />
-            <div className="flex flex-col">
-              <span className="text-[8px] text-red-300 font-bold uppercase tracking-wider">POUNDS</span>
-              <span className="text-sm font-black text-white">{pounds.toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
-
         {/* Tactical Sub-Bar: Possession, Speed, Stamina, Tactics Mode */}
-        <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 text-xs text-slate-300">
+        <div className="hidden flex-wrap items-center justify-center gap-2 md:gap-4 text-xs text-slate-300">
           <div className="flex items-center gap-1.5 bg-slate-950/70 backdrop-blur px-2.5 py-1 rounded-md border border-slate-800">
             <Shield className="w-3.5 h-3.5 text-amber-400" />
             <span className="text-slate-400">الاستحواذ:</span>
@@ -243,7 +238,7 @@ export const ScoreboardHUD: React.FC<ScoreboardHUDProps> = ({
         </div>
 
         {/* Quick Controls Hint Bar */}
-        <div className="hidden lg:flex items-center gap-3 bg-slate-950/70 backdrop-blur px-3 py-0.5 rounded-full border border-slate-800 text-[11px] text-slate-400">
+        <div className="hidden items-center gap-3 bg-slate-950/70 backdrop-blur px-3 py-0.5 rounded-full border border-slate-800 text-[11px] text-slate-400">
           <span className="text-amber-400 font-bold">🎮 حركة اللاعب:</span>
           <span className="text-slate-300 font-semibold">[← شمال / A]</span>
           <span className="text-slate-300 font-semibold">[يمين → / D]</span>
@@ -256,7 +251,7 @@ export const ScoreboardHUD: React.FC<ScoreboardHUDProps> = ({
         </div>
 
         {/* Top Control Utility Buttons */}
-        <nav aria-label="Game controls" className="pointer-events-auto flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md p-1 rounded-lg border border-slate-800 shadow-lg flex-wrap sm:flex-nowrap justify-center">
+        <nav aria-label="Game controls" className="pointer-events-auto flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md p-1 rounded-lg border border-slate-800 shadow-lg [&>button:not(.core-control)]:hidden">
           {/* World Cup 2026 Ball Showcase Button */}
           {onOpenBallModal && (
             <button
@@ -338,11 +333,17 @@ export const ScoreboardHUD: React.FC<ScoreboardHUDProps> = ({
             </button>
           )}
 
+          {onOpenSkillShop && (
+            <button onClick={onOpenSkillShop} className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-cyan-500/20 hover:bg-cyan-500/35 text-cyan-200 border border-cyan-400/60 text-xs font-black transition-all cursor-pointer" title="شراء مهارات بقيمة 100 جوهرة">
+              <WandSparkles className="w-4 h-4 text-cyan-300" /><span>متجر المهارات</span>
+            </button>
+          )}
+
           {/* Main Menu Button */}
           {onOpenMainMenu && (
             <button
               onClick={onOpenMainMenu}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gradient-to-r from-purple-500/30 to-pink-500/30 hover:from-purple-500/50 hover:to-pink-500/50 text-purple-300 border border-purple-400/60 text-xs font-black transition-all cursor-pointer shadow-sm"
+              className="core-control flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-gradient-to-r from-purple-500/30 to-pink-500/30 hover:from-purple-500/50 hover:to-pink-500/50 text-purple-300 border border-purple-400/60 text-xs font-black transition-all cursor-pointer shadow-sm"
               title="القائمة الرئيسية"
             >
               <Grid className="w-4 h-4 fill-purple-400 text-purple-400" />
@@ -388,7 +389,7 @@ export const ScoreboardHUD: React.FC<ScoreboardHUDProps> = ({
 
           <button
             onClick={toggleSound}
-            className="p-1.5 rounded-md hover:bg-slate-800 text-slate-300 text-xs transition-colors cursor-pointer"
+            className="core-control p-1.5 rounded-md hover:bg-slate-800 text-slate-300 text-xs transition-colors cursor-pointer"
             title={muted ? 'تشغيل الصوت' : 'كتم الصوت'}
           >
             {muted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}

@@ -48,7 +48,7 @@ class AIService {
         model,
         contents: prompt,
       });
-      return response.text;
+      return response.text ?? null;
     } catch (error) {
       console.error('AI Service: Content generation failed', error);
       return null;

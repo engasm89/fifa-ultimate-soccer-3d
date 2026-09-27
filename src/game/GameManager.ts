@@ -30,6 +30,7 @@ export interface MatchStats {
   stamina: number;
   shotPower: number;
   hasBallControl: boolean;
+  isMatchFinished: boolean;
   radarPlayers?: { x: number; z: number; team: 'home' | 'away'; isUser?: boolean }[];
   radarBall?: { x: number; z: number };
 }
@@ -45,6 +46,7 @@ export class GameManager {
   public totalShots: number = 0;
   public homeTouches: number = 0;
   public awayTouches: number = 0;
+  public isMatchFinished: boolean = false;
 
   private goalCelebrationTimer: number = 0;
   private isKickoffCountdown: boolean = false;
@@ -66,6 +68,7 @@ export class GameManager {
     this.totalShots = 0;
     this.homeTouches = 1;
     this.awayTouches = 1;
+    this.isMatchFinished = false;
   }
 
   public setCameraMode(mode: CameraMode) {
@@ -102,8 +105,13 @@ export class GameManager {
     }
 
     // Match Clock (1 real second = 10 match seconds -> 9 min full match)
-    if (!this.isGoalScored && !this.isKickoffCountdown) {
+    if (!this.isGoalScored && !this.isKickoffCountdown && !this.isMatchFinished) {
       this.matchTime += clampedDt * 10;
+      if (this.matchTime >= 5400) {
+        this.matchTime = 5400;
+        this.isMatchFinished = true;
+        soundEngine.playWhistle(false);
+      }
     }
 
     // Goal scored trigger handling
@@ -155,6 +163,7 @@ export class GameManager {
         stamina: Math.round(player.stamina),
         shotPower: player.shotPower,
         hasBallControl: player.hasBallControl,
+        isMatchFinished: this.isMatchFinished,
         radarPlayers: radarPlayers,
         radarBall: { x: ball.position.x, z: ball.position.z },
       });

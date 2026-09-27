@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Diamond, Coins, ShoppingBag, CreditCard, Check } from 'lucide-react';
+import { X, Diamond, Coins, ShoppingBag, CreditCard, Check, LockKeyhole } from 'lucide-react';
 
 interface StoreModalProps {
   isOpen: boolean;
@@ -24,6 +24,8 @@ export const StoreModal: React.FC<StoreModalProps> = ({
 }) => {
   const [selectedItem, setSelectedItem] = useState<{ name: string; price: string; amount: number; type: 'gems' | 'pounds' } | null>(null);
   const [showPayment, setShowPayment] = useState(false);
+  const [secretCode, setSecretCode] = useState('');
+  const [codeError, setCodeError] = useState(false);
 
   const gemPackages = [
     { name: 'حزمة الجواهر الصغيرة', amount: 500, price: '$0.99' },
@@ -43,9 +45,15 @@ export const StoreModal: React.FC<StoreModalProps> = ({
   const handlePurchase = (item: typeof gemPackages[0], type: 'gems' | 'pounds') => {
     setSelectedItem({ ...item, type });
     setShowPayment(true);
+    setSecretCode('');
+    setCodeError(false);
   };
 
   const handlePaymentConfirm = () => {
+    if (secretCode !== '1989') {
+      setCodeError(true);
+      return;
+    }
     if (selectedItem) {
       onPurchase(selectedItem);
       setShowPayment(false);
@@ -202,6 +210,11 @@ export const StoreModal: React.FC<StoreModalProps> = ({
                       <CreditCard className="w-5 h-5" />
                       تأكيد الدفع
                     </button>
+                  </div>
+                  <div className="mt-5">
+                    <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-300"><LockKeyhole className="w-4 h-4 text-amber-400" />الرقم السري لشحن الحزمة</label>
+                    <input value={secretCode} onChange={(e) => { setSecretCode(e.target.value); setCodeError(false); }} inputMode="numeric" type="password" maxLength={4} placeholder="أدخل الرقم السري" className="w-full rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-center text-white outline-none focus:border-amber-400" />
+                    {codeError && <p className="mt-2 text-center text-xs font-bold text-rose-400">الرقم السري غير صحيح.</p>}
                   </div>
                 </motion.div>
               </div>
