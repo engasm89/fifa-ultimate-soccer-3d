@@ -240,6 +240,10 @@ export const SoccerCanvas: React.FC<SoccerCanvasProps> = ({
 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    const clearKeyboardControls = () => {
+      keyControlsRef.current = { forward: false, backward: false, left: false, right: false, sprint: false, shootCharge: false, passOrTackle: false };
+    };
+    window.addEventListener('blur', clearKeyboardControls);
 
     // Mouse Drag for Orbit Camera
     const onMouseDown = (e: MouseEvent) => {
@@ -293,9 +297,18 @@ export const SoccerCanvas: React.FC<SoccerCanvasProps> = ({
     // 8. Main Render & Physics Loop
     const clock = new THREE.Clock();
     let animId: number;
+    let pageHidden = document.hidden;
+    const onVisibilityChange = () => {
+      pageHidden = document.hidden;
+      // Discard hidden-tab elapsed time so returning children do not see a physics jump.
+      clock.getDelta();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     const animate = () => {
       animId = requestAnimationFrame(animate);
+
+      if (pageHidden) return;
 
       // Keep player movement responsive during short frame drops without huge simulation jumps.
       const dt = Math.min(clock.getDelta(), 0.08);
@@ -377,11 +390,13 @@ export const SoccerCanvas: React.FC<SoccerCanvasProps> = ({
       cancelAnimationFrame(animId);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', clearKeyboardControls);
       container.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
       container.removeEventListener('wheel', onWheel);
       window.removeEventListener('resize', onResize);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       if (renderer.domElement && container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }

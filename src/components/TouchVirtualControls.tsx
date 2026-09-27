@@ -313,8 +313,10 @@ export const TouchVirtualControls: React.FC<TouchVirtualControlsProps> = ({
           <button
             onTouchStart={() => updateControls({ sprint: true })}
             onTouchEnd={() => updateControls({ sprint: false })}
+            onTouchCancel={() => updateControls({ sprint: false })}
             onMouseDown={() => updateControls({ sprint: true })}
             onMouseUp={() => updateControls({ sprint: false })}
+            onMouseLeave={() => updateControls({ sprint: false })}
             className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 active:from-amber-500 active:to-yellow-700 backdrop-blur border-3 border-amber-200 text-slate-950 font-black flex flex-col items-center justify-center active:scale-95 shadow-xl select-none cursor-pointer"
             title="انطلاقة السرعة القصوى (Sprint 99)"
           >
@@ -332,11 +334,13 @@ export const TouchVirtualControls: React.FC<TouchVirtualControlsProps> = ({
               updateControls({ passOrTackle: true });
             }}
             onTouchEnd={() => updateControls({ passOrTackle: false })}
+            onTouchCancel={() => updateControls({ passOrTackle: false })}
             onMouseDown={() => {
               soundEngine.init();
               updateControls({ passOrTackle: true });
             }}
             onMouseUp={() => updateControls({ passOrTackle: false })}
+            onMouseLeave={() => updateControls({ passOrTackle: false })}
             className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-700 active:from-orange-600 active:to-amber-800 backdrop-blur border-3 border-orange-300 text-white font-black flex flex-col items-center justify-center active:scale-95 shadow-xl select-none cursor-pointer"
             title="زحلقة الافتكاك والسقوط على العشب لقطع الكرة"
           >
@@ -348,8 +352,10 @@ export const TouchVirtualControls: React.FC<TouchVirtualControlsProps> = ({
           <button
             onTouchStart={() => updateControls({ passOrTackle: true })}
             onTouchEnd={() => updateControls({ passOrTackle: false })}
+            onTouchCancel={() => updateControls({ passOrTackle: false })}
             onMouseDown={() => updateControls({ passOrTackle: true })}
             onMouseUp={() => updateControls({ passOrTackle: false })}
+            onMouseLeave={() => updateControls({ passOrTackle: false })}
             className="w-22 h-22 sm:w-26 sm:h-26 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-700 active:from-teal-600 active:to-emerald-800 backdrop-blur border-3 border-teal-300 text-white font-black flex flex-col items-center justify-center active:scale-95 shadow-xl select-none cursor-pointer"
             title="تمرير أرضي لزميل الفريق"
           >
@@ -364,11 +370,13 @@ export const TouchVirtualControls: React.FC<TouchVirtualControlsProps> = ({
               updateControls({ shootCharge: true });
             }}
             onTouchEnd={() => updateControls({ shootCharge: false })}
+            onTouchCancel={() => updateControls({ shootCharge: false })}
             onMouseDown={() => {
               soundEngine.init();
               updateControls({ shootCharge: true });
             }}
             onMouseUp={() => updateControls({ shootCharge: false })}
+            onMouseLeave={() => updateControls({ shootCharge: false })}
             className="w-28 h-28 sm:w-34 sm:h-34 rounded-3xl bg-gradient-to-br from-red-500 via-rose-600 to-red-700 active:from-red-600 active:to-rose-800 border-4 border-amber-400 text-white font-black flex flex-col items-center justify-center active:scale-95 shadow-[0_0_40px_rgba(239,68,68,0.9)] select-none cursor-pointer animate-pulse"
             title="اضغط مطولاً لشحن قوة التسديدة ثم حرر لإطلاق الصاروخ نحو المرمى!"
           >
