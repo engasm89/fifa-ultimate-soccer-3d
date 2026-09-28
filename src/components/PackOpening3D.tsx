@@ -19,7 +19,28 @@ interface PackOpening3DProps {
   onPlayerFound: (player: Player) => void;
 }
 
-type PackType = 'bronze' | 'silver' | 'gold' | 'premium';
+type PackType = 'bronze' | 'silver' | 'gold' | 'rare_season';
+
+type SeasonTier = 'star' | 'elite' | 'rising';
+
+const RARE_SEASON_TIERS: Array<{ tier: SeasonTier; rating: number; chance: number; ids: string[] }> = [
+  // Famous global stars always appear as 120 OVR season-star cards.
+  { tier: 'star', rating: 120, chance: 55, ids: ['cr7-titan-123', 'messi-goat-123', 'mbappe-121', 'haaland-121', 'vinicius-120', 'debruyne-120', 'vandijk-120'] },
+  // Established high-level players appear as 115 OVR elite cards.
+  { tier: 'elite', rating: 115, chance: 32, ids: ['saka-121', 'xavi-simons-120', '20', '44', '19', 'courtois-119', 'alisson-119'] },
+  // Young prospects appear as 113 OVR rising-star cards.
+  { tier: 'rising', rating: 113, chance: 13, ids: ['45', '46', '51', '54', '49'] },
+];
+
+const chooseRareSeasonPlayer = (): Player => {
+  const roll = Math.random() * 100;
+  let cumulative = 0;
+  const selectedTier = RARE_SEASON_TIERS.find(tier => { cumulative += tier.chance; return roll < cumulative; }) ?? RARE_SEASON_TIERS[0];
+  const eligible = PLAYERS.filter(player => selectedTier.ids.includes(player.id));
+  const source = eligible[Math.floor(Math.random() * eligible.length)] ?? PLAYERS[0];
+  // Keep the acquired player on the requested season-card level, including in the squad.
+  return { ...source, rating: selectedTier.rating, rank: selectedTier.tier === 'star' ? 5 : selectedTier.tier === 'elite' ? 4 : 3 };
+};
 
 export const PackOpening3D: React.FC<PackOpening3DProps> = ({
   isOpen,
@@ -67,14 +88,15 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
       icon: <Diamond className="w-8 h-8 text-yellow-400 fill-yellow-400" />
     },
     {
-      type: 'premium' as PackType,
-      name: 'باكة بريميوم',
+      type: 'rare_season' as PackType,
+      name: 'باك نجم الموسم النادر',
       cost: 50000,
       currency: 'pounds' as const,
-      color: 'from-purple-500 to-pink-600',
-      minRating: 120,
-      maxRating: 123,
-      icon: <Trophy className="w-8 h-8 text-purple-400" />
+      color: 'from-[#21114b] via-[#6d4b12] to-[#1d1439]',
+      minRating: 113,
+      maxRating: 120,
+      icon: <Trophy className="w-8 h-8 text-yellow-300" />,
+      isRareSeason: true,
     }
   ];
 
@@ -96,8 +118,10 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     const candidates = PLAYERS.filter(player => player.rating >= pack.minRating && player.rating <= pack.maxRating);
-    // Every configured tier has players, but keep a safe fallback if the database changes.
-    const player = (candidates.length ? candidates : PLAYERS)[Math.floor(Math.random() * (candidates.length || PLAYERS.length))];
+    // The rare pack has fixed, transparent season tiers; other packs use their normal range.
+    const player = pack.isRareSeason
+      ? chooseRareSeasonPlayer()
+      : (candidates.length ? candidates : PLAYERS)[Math.floor(Math.random() * (candidates.length || PLAYERS.length))];
     setOpenedPlayer(player);
     onPlayerFound(player);
 
@@ -281,7 +305,7 @@ export const PackOpening3D: React.FC<PackOpening3DProps> = ({
                           <span className="text-white font-bold">{pack.cost.toLocaleString()}</span>
                         </div>
                         <p className="text-xs text-white/70">
-                          OVR {pack.minRating}-{pack.maxRating}
+                          {pack.isRareSeason ? 'نجوم 120 • متوسط 115 • صاعد 113' : `OVR ${pack.minRating}-${pack.maxRating}`}
                         </p>
                       </div>
                       {!canAfford && (

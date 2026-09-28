@@ -8,7 +8,7 @@ import { motion } from 'motion/react';
 import { Player, getCleanPlayerImage } from '../data/players';
 import { SuperstarProfile } from '../game/superstars';
 import { playerToSuperstar } from '../data/playerBridge';
-import { Star, Trophy, Shield, Zap } from 'lucide-react';
+import { Star } from 'lucide-react';
 
 interface PlayerCard3DProps {
   player: Player | SuperstarProfile;
@@ -43,6 +43,12 @@ export const PlayerCard3D: React.FC<PlayerCard3DProps> = ({
     return 'from-gray-400 to-slate-600';
   };
 
+  const isSeasonStar = superstar.rating >= 113;
+  const stats = [
+    ['سر', superstar.stats.PAC], ['سد', superstar.stats.SHO], ['مر', superstar.stats.PAS],
+    ['مرغ', superstar.stats.DRI], ['دف', superstar.stats.DEF], ['بد', superstar.stats.PHY],
+  ];
+
   const getCardStyle = () => {
     if (!show3DEffects) return {};
     
@@ -65,8 +71,10 @@ export const PlayerCard3D: React.FC<PlayerCard3DProps> = ({
       className={`relative ${sizeClasses[size]} rounded-xl overflow-hidden cursor-pointer transition-all duration-300`}
       style={getCardStyle()}
     >
-      {/* Card Background with Gradient */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${getRatingColor(superstar.rating)} opacity-90`} />
+      {/* Season-star card: dark navy, gold frame, luminous stadium rays. */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${isSeasonStar ? 'from-[#100d2c] via-[#25205a] to-[#090a1f]' : getRatingColor(superstar.rating)}`} />
+      <div className="absolute inset-[3px] rounded-[10px] border border-yellow-200/80 shadow-[inset_0_0_0_2px_rgba(128,84,20,.8),inset_0_0_24px_rgba(250,204,21,.2)]" />
+      <div className="absolute inset-0 opacity-60 bg-[radial-gradient(circle_at_50%_10%,rgba(250,204,21,.55),transparent_27%),linear-gradient(120deg,transparent_35%,rgba(250,204,21,.22)_36%,transparent_44%),linear-gradient(55deg,transparent_43%,rgba(250,204,21,.18)_44%,transparent_52%)]" />
       
       {/* 3D Shimmer Effect */}
       {show3DEffects && (
@@ -104,30 +112,15 @@ export const PlayerCard3D: React.FC<PlayerCard3DProps> = ({
         </div>
       )}
 
-      {/* Player Image Area */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full p-2">
-        {/* Rating Badge */}
-        <div className="absolute top-2 left-2 bg-black/60 backdrop-blur rounded-lg px-2 py-1 border border-white/20">
-          <span className="text-lg font-black text-white">{superstar.rating}</span>
+      {/* Card hierarchy follows a collector-card layout: rating, portrait, identity and stats. */}
+      <div className="relative z-10 h-full p-2 text-[#ffe58a]">
+        <div className="absolute left-3 top-3 leading-none"><div className="text-xl font-black tracking-tighter text-yellow-200 drop-shadow">{superstar.rating}</div><div className="mt-0.5 text-[8px] font-black text-yellow-100">{superstar.position}</div></div>
+        <div className="absolute right-3 top-3 flex h-4 w-4 items-center justify-center rounded-full border border-yellow-200/80 bg-yellow-400/20"><Star className="h-2.5 w-2.5 fill-yellow-200 text-yellow-200" /></div>
+        <div className="absolute left-1/2 top-7 h-[57%] w-[82%] -translate-x-1/2 overflow-hidden rounded-b-[40%] border-b border-yellow-200/50 bg-gradient-to-t from-[#17143f] via-transparent to-transparent">
+          <img src={getCleanPlayerImage(player as Player)} alt={superstar.nameEn} className="h-full w-full object-contain object-bottom drop-shadow-[0_8px_8px_rgba(0,0,0,.75)]" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
         </div>
-
-        {/* Real player portrait, with the game avatar as a safe fallback. */}
-        <img src={getCleanPlayerImage(player as Player)} alt={superstar.nameEn} className="h-20 w-20 object-contain object-bottom drop-shadow-xl" onError={(event) => { event.currentTarget.style.display = 'none'; }} />
-
-        {/* Player Name */}
-        <div className="text-center">
-          <h3 className="text-white font-black text-xs uppercase truncate drop-shadow-md">
-            {superstar.nameEn}
-          </h3>
-          <p className="text-white/80 text-[8px] font-semibold truncate">
-            {superstar.club}
-          </p>
-        </div>
-
-        {/* Position Badge */}
-        <div className="absolute bottom-2 right-2 bg-white/20 backdrop-blur rounded px-1.5 py-0.5">
-          <span className="text-white font-black text-[10px]">{superstar.position}</span>
-        </div>
+        <div className="absolute bottom-9 left-2 right-2 text-center"><p className="truncate text-[7px] font-black tracking-[.12em] text-yellow-100">نجم الموسم</p><h3 className="truncate text-[9px] font-black uppercase text-yellow-100 drop-shadow">{superstar.nameEn}</h3></div>
+        <div className="absolute bottom-2 left-2 right-2 grid grid-cols-3 gap-x-1 gap-y-0.5 border-t border-yellow-200/50 pt-1 text-center">{stats.map(([label, value]) => <div key={label as string} className="leading-none"><span className="block text-[6px] font-bold text-yellow-100/80">{label}</span><span className="text-[8px] font-black text-yellow-200">{value as number}</span></div>)}</div>
       </div>
 
       {/* Special Effects for High-Rated Players */}
@@ -140,27 +133,6 @@ export const PlayerCard3D: React.FC<PlayerCard3DProps> = ({
         </>
       )}
 
-      {/* Stats Preview (Hover) */}
-      <div className="absolute inset-0 bg-black/80 backdrop-blur opacity-0 hover:opacity-100 transition-opacity z-20 flex flex-col items-center justify-center p-2">
-        <div className="grid grid-cols-2 gap-1 text-[8px]">
-          <div className="flex items-center gap-1">
-            <Zap className="w-3 h-3 text-yellow-400" />
-            <span className="text-white font-bold">PAC {superstar.stats.PAC}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Trophy className="w-3 h-3 text-red-400" />
-            <span className="text-white font-bold">SHO {superstar.stats.SHO}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Shield className="w-3 h-3 text-blue-400" />
-            <span className="text-white font-bold">DEF {superstar.stats.DEF}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Star className="w-3 h-3 text-purple-400" />
-            <span className="text-white font-bold">DRI {superstar.stats.DRI}</span>
-          </div>
-        </div>
-      </div>
     </motion.div>
   );
 };
