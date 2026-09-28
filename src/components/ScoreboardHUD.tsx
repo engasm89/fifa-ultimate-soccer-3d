@@ -142,8 +142,9 @@ export const ScoreboardHUD: React.FC<ScoreboardHUDProps> = ({
             </div>
             <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-mono font-semibold">
               <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span>{formatTime(stats?.matchMinutes, stats?.matchSeconds)}</span>
+              <span>{stats?.isHalfTime ? 'استراحة بين الشوطين' : formatTime(stats?.matchMinutes, stats?.matchSeconds)}</span>
             </div>
+            <span className="text-[9px] font-black text-slate-400">الشوط {stats?.currentHalf ?? 1} / 2</span>
           </div>
 
           {/* Away Team (Opponent) */}

@@ -1310,6 +1310,9 @@ function createGoal(pos: THREE.Vector3, isSouth: boolean): { goalGroup: THREE.Gr
 
   // Physical Cloth Net
   const clothNet = new ClothGoalNet(pos, GOAL_WIDTH, GOAL_HEIGHT, GOAL_DEPTH, isSouth);
+  // The cloth simulation stores world-space vertices while the goal group is translated.
+  // Cancel that parent translation for the mesh so it sits directly behind its posts.
+  clothNet.mesh.position.set(-pos.x, 0, -pos.z);
   clothNet.mesh.castShadow = true;
   clothNet.mesh.receiveShadow = true;
   goalGroup.add(clothNet.mesh);

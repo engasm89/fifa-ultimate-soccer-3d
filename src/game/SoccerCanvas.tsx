@@ -16,6 +16,7 @@ import { soundEngine } from './audio';
 
 import { SuperstarProfile } from './superstars';
 import { WorldCupBallEdition } from './worldCupBall2026';
+import { CelebrationId } from '../components/CelebrationShopModal';
 
 export interface LightingConfig {
   intensity: number;
@@ -38,6 +39,8 @@ interface SoccerCanvasProps {
   selectedStar?: SuperstarProfile;
   tacticsMode?: TacticsMode;
   ballEdition?: WorldCupBallEdition;
+  speedBoostUnlocked?: boolean;
+  celebrationStyle?: CelebrationId;
 }
 
 export const SoccerCanvas: React.FC<SoccerCanvasProps> = ({
@@ -51,6 +54,8 @@ export const SoccerCanvas: React.FC<SoccerCanvasProps> = ({
   selectedStar,
   tacticsMode = 'all_out_attack',
   ballEdition = 'trionda_official',
+  speedBoostUnlocked = false,
+  celebrationStyle = 'classic',
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -92,6 +97,9 @@ export const SoccerCanvas: React.FC<SoccerCanvasProps> = ({
     radius: 35,
   });
 
+  useEffect(() => { playerRef.current?.setSpeedBoostUnlocked(speedBoostUnlocked); }, [speedBoostUnlocked]);
+  useEffect(() => { playerRef.current?.setGoalCelebrationStyle(celebrationStyle); }, [celebrationStyle]);
+
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
@@ -132,6 +140,8 @@ export const SoccerCanvas: React.FC<SoccerCanvasProps> = ({
 
     // 4. Soccer Player
     const player = new SoccerPlayer(true);
+    player.setSpeedBoostUnlocked(speedBoostUnlocked);
+    player.setGoalCelebrationStyle(celebrationStyle);
     scene.add(player.group);
     playerRef.current = player;
 

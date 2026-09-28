@@ -31,6 +31,10 @@ export interface MatchStats {
   shotPower: number;
   hasBallControl: boolean;
   isMatchFinished: boolean;
+  currentHalf: 1 | 2;
+  isHalfTime: boolean;
+  isThrowIn: boolean;
+  throwInTeam?: 'home' | 'away';
   radarPlayers?: { x: number; z: number; team: 'home' | 'away'; isUser?: boolean }[];
   radarBall?: { x: number; z: number };
 }
@@ -47,11 +51,16 @@ export class GameManager {
   public homeTouches: number = 0;
   public awayTouches: number = 0;
   public isMatchFinished: boolean = false;
+  public currentHalf: 1 | 2 = 1;
+  public isHalfTime: boolean = false;
 
   private goalCelebrationTimer: number = 0;
   private isKickoffCountdown: boolean = false;
   private countdownSeconds: number = 3;
   private countdownTimer: number = 0;
+  private halfTimeTimer: number = 0;
+  private throwInTimer: number = 0;
+  private throwInTeam: 'home' | 'away' | undefined;
 
   // External listeners
   public onStatsChange?: (stats: MatchStats) => void;
@@ -69,6 +78,11 @@ export class GameManager {
     this.homeTouches = 1;
     this.awayTouches = 1;
     this.isMatchFinished = false;
+    this.currentHalf = 1;
+    this.isHalfTime = false;
+    this.halfTimeTimer = 0;
+    this.throwInTimer = 0;
+    this.throwInTeam = undefined;
   }
 
   public setCameraMode(mode: CameraMode) {
@@ -105,9 +119,15 @@ export class GameManager {
     }
 
     // Match Clock (1 real second = 10 match seconds -> 9 min full match)
-    if (!this.isGoalScored && !this.isKickoffCountdown && !this.isMatchFinished) {
+    if (!this.isGoalScored && !this.isKickoffCountdown && !this.isMatchFinished && !this.isHalfTime) {
       this.matchTime += clampedDt * 10;
-      if (this.matchTime >= 5400) {
+      if (this.currentHalf === 1 && this.matchTime >= 2700) {
+        this.matchTime = 2700;
+        this.isHalfTime = true;
+        this.halfTimeTimer = 3;
+        ball.reset(0, 0);
+        soundEngine.playWhistle(false);
+      } else if (this.matchTime >= 5400) {
         this.matchTime = 5400;
         this.isMatchFinished = true;
         soundEngine.playWhistle(false);
@@ -115,14 +135,14 @@ export class GameManager {
     }
 
     // Goal scored trigger handling
-    const ballResult = ball.update(clampedDt, stadium.northNet, stadium.southNet);
+    const ballResult = this.isHalfTime ? { goalScored: null, touchlineOut: false } : ball.update(clampedDt, stadium.northNet, stadium.southNet);
     const goalScored = ballResult.goalScored;
     if (ballResult.touchlineOut && !this.isGoalScored && !this.isKickoffCountdown) {
       this.restartFromTouchline(ball);
     }
 
     if (goalScored && !this.isGoalScored) {
-      this.handleGoalScored(goalScored, ball, stadium, fireworks);
+      this.handleGoalScored(goalScored, ball, player, stadium, fireworks);
     }
 
     // Goal Celebration sequence
@@ -142,6 +162,16 @@ export class GameManager {
         soundEngine.playWhistle(false);
       }
     }
+
+    if (this.isHalfTime) {
+      this.halfTimeTimer -= clampedDt;
+      if (this.halfTimeTimer <= 0) {
+        this.isHalfTime = false;
+        this.currentHalf = 2;
+        this.startKickoffSequence(ball, player, keeper, defender, fireworks);
+      }
+    }
+    if (this.throwInTimer > 0) this.throwInTimer -= clampedDt;
 
     // Dispatch stats
     const totalPossessionTime = this.homeTouches + this.awayTouches || 1;
@@ -168,6 +198,10 @@ export class GameManager {
         shotPower: player.shotPower,
         hasBallControl: player.hasBallControl,
         isMatchFinished: this.isMatchFinished,
+        currentHalf: this.currentHalf,
+        isHalfTime: this.isHalfTime,
+        isThrowIn: this.throwInTimer > 0,
+        throwInTeam: this.throwInTeam,
         radarPlayers: radarPlayers,
         radarBall: { x: ball.position.x, z: ball.position.z },
       });
@@ -177,6 +211,7 @@ export class GameManager {
   private handleGoalScored(
     goal: 'north' | 'south',
     ball: SoccerBall,
+    player: SoccerPlayer,
     stadium: StadiumSetup,
     fireworks: FireworksManager
   ) {
@@ -189,6 +224,7 @@ export class GameManager {
       // Home Goal scored!
       this.homeScore++;
       this.goalScorer = 'الأسطورة رقم 10 (الكابتن)';
+      player.startGoalCelebration();
     } else {
       this.awayScore++;
       this.goalScorer = 'الصقر الملكي';
@@ -205,8 +241,12 @@ export class GameManager {
     const side = Math.sign(ball.position.x) || 1;
     const z = THREE.MathUtils.clamp(ball.position.z, -PITCH_LENGTH / 2 + 4, PITCH_LENGTH / 2 - 4);
     const recipient = ball.lastKicker === 'player' ? 'opponent' : 'player';
-    ball.reset(side * (PITCH_WIDTH / 2 - 0.55), z);
-    ball.applyKick(new THREE.Vector3(-side * 9, 1.4, recipient === 'opponent' ? 2.8 : -2.8), 0, recipient);
+    ball.reset(side * (PITCH_WIDTH / 2 - 0.22), z);
+    const towardPitch = -side * 7.5;
+    const towardAttack = recipient === 'opponent' ? 2.6 : -2.6;
+    ball.applyThrowIn(new THREE.Vector3(towardPitch, 5.4, towardAttack), recipient);
+    this.throwInTimer = 1.6;
+    this.throwInTeam = recipient === 'player' ? 'home' : 'away';
   }
 
   private startKickoffSequence(

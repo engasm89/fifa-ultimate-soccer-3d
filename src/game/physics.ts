@@ -147,6 +147,16 @@ export class SoccerBall {
     soundEngine.playKick(impulse.length() / 25);
   }
 
+  /** A restart launched overhead by hand from the touchline. */
+  public applyThrowIn(direction: THREE.Vector3, thrower: 'player' | 'opponent') {
+    this.velocity.copy(direction);
+    this.lastKicker = thrower;
+    this.isGrounded = false;
+    this.spin.set(0, 0, 0);
+    this.angularVelocity.set(-direction.z, 0, direction.x);
+    soundEngine.playKick(0.25);
+  }
+
   /**
    * Physics Integration Step
    */

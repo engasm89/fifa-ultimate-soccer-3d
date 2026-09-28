@@ -24,6 +24,7 @@ import { PackOpening3D } from './components/PackOpening3D';
 import { TrainingMode3D } from './components/TrainingMode3D';
 import { StoreModal } from './components/StoreModal';
 import { SkillShopModal, OwnedSkill } from './components/SkillShopModal';
+import { CelebrationShopModal, CelebrationId, OwnedCelebration } from './components/CelebrationShopModal';
 import { MainMenu } from './components/MainMenu';
 import { ProfileModal } from './components/ProfileModal';
 import { getSuperstarsAsPlayers, playerToSuperstar } from './data/playerBridge';
@@ -66,7 +67,10 @@ export default function App() {
   const [showTrainingMode, setShowTrainingMode] = useState<boolean>(false);
   const [showStore, setShowStore] = useState<boolean>(false);
   const [showSkillShop, setShowSkillShop] = useState<boolean>(false);
+  const [showCelebrationShop, setShowCelebrationShop] = useState<boolean>(false);
   const [ownedSkills, setOwnedSkills] = useState<OwnedSkill[]>([]);
+  const [ownedCelebrations, setOwnedCelebrations] = useState<OwnedCelebration[]>([]);
+  const [selectedCelebration, setSelectedCelebration] = useState<CelebrationId>('classic');
   const rewardedMatchRef = useRef<number | null>(null);
   const [showMainMenu, setShowMainMenu] = useState<boolean>(false);
   const [showProfile, setShowProfile] = useState<boolean>(false);
@@ -117,6 +121,12 @@ export default function App() {
     if (savedSkills) {
       try { setOwnedSkills(JSON.parse(savedSkills)); } catch { localStorage.removeItem('fifa_owned_skills'); }
     }
+    const savedCelebrations = localStorage.getItem('fifa_owned_celebrations');
+    if (savedCelebrations) {
+      try { setOwnedCelebrations(JSON.parse(savedCelebrations)); } catch { localStorage.removeItem('fifa_owned_celebrations'); }
+    }
+    const savedCelebration = localStorage.getItem('fifa_selected_celebration') as CelebrationId | null;
+    if (savedCelebration === 'classic' || savedCelebration === 'siu' || savedCelebration === 'dance' || savedCelebration === 'slide') setSelectedCelebration(savedCelebration);
 
     // Load player collection
     const savedPlayers = localStorage.getItem('fifa_players');
@@ -149,13 +159,15 @@ export default function App() {
     localStorage.setItem('fifa_pounds', pounds.toString());
     localStorage.setItem('fifa_players', JSON.stringify(myPlayers));
     localStorage.setItem('fifa_owned_skills', JSON.stringify(ownedSkills));
+    localStorage.setItem('fifa_owned_celebrations', JSON.stringify(ownedCelebrations));
+    localStorage.setItem('fifa_selected_celebration', selectedCelebration);
     if (user) localStorage.setItem('fifa_user', JSON.stringify(user));
   }, [gems, pounds, myPlayers, ownedSkills, user]);
 
-  // A completed win grants exactly 100 gems, once per match.
+  // A completed win grants exactly 200 gems, once per match.
   useEffect(() => {
     if (stats?.isMatchFinished && stats.homeScore > stats.awayScore && rewardedMatchRef.current !== stats.matchMinutes) {
-      setGems(prev => prev + 100);
+      setGems(prev => prev + 200);
       rewardedMatchRef.current = stats.matchMinutes;
     }
     if (stats && stats.matchMinutes === 0) {
@@ -223,6 +235,13 @@ export default function App() {
     setOwnedSkills(prev => [...prev, skill]);
   }, [gems, ownedSkills]);
 
+  const handleBuyCelebration = useCallback((celebration: OwnedCelebration) => {
+    if (gems < 100 || ownedCelebrations.some(item => item.id === celebration.id)) return;
+    setGems(prev => prev - 100);
+    setOwnedCelebrations(prev => [...prev, celebration]);
+    setSelectedCelebration(celebration.id);
+  }, [gems, ownedCelebrations]);
+
   const handleLogin = useCallback((name: string, facebook: string) => {
     setUser({ name, facebook });
   }, []);
@@ -246,6 +265,8 @@ export default function App() {
         selectedStar={selectedStar}
         tacticsMode={tacticsMode}
         ballEdition={ballEdition}
+        speedBoostUnlocked={ownedSkills.some(skill => skill.id === 'pace')}
+        celebrationStyle={selectedCelebration}
       />
 
       {/* Broadcast Scoreboard HUD */}
@@ -390,6 +411,16 @@ export default function App() {
         onBuy={handleBuySkill}
       />
 
+      <CelebrationShopModal
+        isOpen={showCelebrationShop}
+        onClose={() => setShowCelebrationShop(false)}
+        gems={gems}
+        ownedCelebrations={ownedCelebrations}
+        selectedCelebration={selectedCelebration}
+        onBuy={handleBuyCelebration}
+        onSelect={setSelectedCelebration}
+      />
+
       {/* Main Menu */}
       <MainMenu
         isOpen={showMainMenu}
@@ -417,6 +448,10 @@ export default function App() {
         onOpenSkills={() => {
           setShowMainMenu(false);
           setShowSkillShop(true);
+        }}
+        onOpenCelebrations={() => {
+          setShowMainMenu(false);
+          setShowCelebrationShop(true);
         }}
         onOpenSettings={() => {
           setShowMainMenu(false);

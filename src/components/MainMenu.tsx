@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, Users, Package, Target, ShoppingBag, Settings, HelpCircle, Play, User, WandSparkles } from 'lucide-react';
+import { Trophy, Users, Package, Target, ShoppingBag, Settings, HelpCircle, Play, User, WandSparkles, PartyPopper } from 'lucide-react';
 
 interface MainMenuProps {
   isOpen: boolean;
@@ -16,6 +16,7 @@ interface MainMenuProps {
   onOpenTraining: () => void;
   onOpenStore: () => void;
   onOpenSkills?: () => void;
+  onOpenCelebrations?: () => void;
   onOpenSettings: () => void;
   onOpenHelp: () => void;
   onOpenProfile: () => void;
@@ -31,6 +32,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onOpenTraining,
   onOpenStore,
   onOpenSkills,
+  onOpenCelebrations,
   onOpenSettings,
   onOpenHelp,
   onOpenProfile,
@@ -83,6 +85,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       color: 'from-green-500 to-teal-600'
     },
     ...(onOpenSkills ? [{ icon: <WandSparkles className="w-6 h-6" />, label: 'متجر المهارات', description: 'اشترِ المهارات بـ100 جوهرة', action: onOpenSkills, color: 'from-cyan-500 to-blue-600' }] : []),
+    ...(onOpenCelebrations ? [{ icon: <PartyPopper className="w-6 h-6" />, label: 'متجر الاحتفالات', description: 'اختر احتفال لاعبك بعد الهدف', action: onOpenCelebrations, color: 'from-fuchsia-500 to-pink-600' }] : []),
     {
       icon: <Settings className="w-6 h-6" />,
       label: 'الإعدادات',

@@ -14,6 +14,7 @@ import { SoccerBall, BALL_RADIUS } from './physics';
 import { PITCH_LENGTH, PITCH_WIDTH } from './stadium';
 import { SUPERSTARS, SuperstarProfile } from './superstars';
 import { soundEngine } from './audio';
+import type { CelebrationId } from '../components/CelebrationShopModal';
 
 export interface PlayerControls {
   forward: boolean;
@@ -71,7 +72,10 @@ export class SoccerPlayer {
 
   // Locomotion tuning
   private walkSpeed: number = 6.2;
-  private sprintSpeed: number = 10.8;
+  private sprintSpeed: number = 8.4;
+  private speedBoostUnlocked: boolean = false;
+  private goalCelebrationStyle: CelebrationId = 'classic';
+  private goalCelebrationTimer: number = 0;
   private turnSpeed: number = 14.0;
   private animTimer: number = 0;
   private kickAnimTimer: number = 0;
@@ -142,8 +146,7 @@ export class SoccerPlayer {
 
   public setSuperstar(star: SuperstarProfile) {
     this.superstar = star;
-    this.walkSpeed = star.traits.walkSpeed;
-    this.sprintSpeed = star.traits.sprintSpeed;
+    this.applySpeedProfile();
     this.turnSpeed = star.traits.turnSpeed;
 
     // The selected footballer never changes the team kit colours.
@@ -183,6 +186,32 @@ export class SoccerPlayer {
     (this.badgeMesh.material as THREE.MeshBasicMaterial).map = numTex;
     (this.badgeMesh.material as THREE.MeshBasicMaterial).needsUpdate = true;
     this.updateIdentityBadge();
+  }
+
+  /** Sprint is deliberately modest until the pace skill is bought. */
+  public setSpeedBoostUnlocked(unlocked: boolean) {
+    this.speedBoostUnlocked = unlocked;
+    this.applySpeedProfile();
+  }
+
+  public setGoalCelebrationStyle(style: CelebrationId) {
+    this.goalCelebrationStyle = style;
+  }
+
+  public startGoalCelebration() {
+    this.goalCelebrationTimer = 3.4;
+    this.velocity.set(0, 0, 0);
+    this.hasBallControl = false;
+    this.isChargingShot = false;
+    this.aimArrow.visible = false;
+  }
+
+  private applySpeedProfile() {
+    const traits = this.superstar.traits;
+    this.walkSpeed = traits.walkSpeed;
+    const multiplier = this.speedBoostUnlocked ? 0.94 : 0.82;
+    const minimumGap = this.speedBoostUnlocked ? 2.8 : 1.45;
+    this.sprintSpeed = Math.max(this.walkSpeed + minimumGap, traits.sprintSpeed * multiplier);
   }
 
   private updateIdentityBadge() {
@@ -538,6 +567,7 @@ export class SoccerPlayer {
     this.shotPower = 0;
     this.isFalling = false;
     this.fallTimer = 0;
+    this.goalCelebrationTimer = 0;
     this.bodyMesh.position.set(0, 0, 0);
     this.bodyMesh.rotation.set(0, 0, 0);
     this.group.position.copy(this.position);
@@ -574,6 +604,16 @@ export class SoccerPlayer {
     camRight?: THREE.Vector3
   ) {
     const clampedDt = Math.min(dt, 0.08);
+
+    if (this.goalCelebrationTimer > 0) {
+      this.goalCelebrationTimer -= clampedDt;
+      this.updateGoalCelebration(clampedDt);
+      if (this.goalCelebrationTimer <= 0) {
+        this.bodyMesh.position.set(0, 0, 0);
+        this.bodyMesh.rotation.set(0, 0, 0);
+      }
+      return;
+    }
 
     // If currently sliding / fallen on pitch:
     if (this.isFalling) {
@@ -778,6 +818,39 @@ export class SoccerPlayer {
 
     ball.applyKick(shotVel, curveSpin, 'player');
     this.hasBallControl = false;
+  }
+
+  private updateGoalCelebration(dt: number) {
+    this.animTimer += dt * 7;
+    const pulse = Math.sin(this.animTimer);
+    this.leftLowerLeg.rotation.x = 0;
+    this.rightLowerLeg.rotation.x = 0;
+    this.torsoMesh.rotation.y = 0;
+    if (this.goalCelebrationStyle === 'siu') {
+      this.bodyMesh.position.y = Math.max(0, pulse) * 0.36;
+      this.leftArm.rotation.x = -2.35;
+      this.rightArm.rotation.x = -2.35;
+      this.leftUpperLeg.rotation.x = pulse > 0 ? -0.45 : 0;
+      this.rightUpperLeg.rotation.x = pulse > 0 ? 0.45 : 0;
+    } else if (this.goalCelebrationStyle === 'dance') {
+      this.bodyMesh.rotation.z = pulse * 0.22;
+      this.leftArm.rotation.x = -1.2 + pulse * 0.75;
+      this.rightArm.rotation.x = -1.2 - pulse * 0.75;
+      this.leftUpperLeg.rotation.x = pulse * 0.4;
+      this.rightUpperLeg.rotation.x = -pulse * 0.4;
+    } else if (this.goalCelebrationStyle === 'slide') {
+      this.bodyMesh.position.y = -0.04;
+      this.bodyMesh.rotation.x = -0.35;
+      this.leftArm.rotation.x = -1.65;
+      this.rightArm.rotation.x = -1.65;
+      this.leftUpperLeg.rotation.x = 0.3;
+      this.rightUpperLeg.rotation.x = 0.3;
+    } else {
+      this.leftArm.rotation.x = -1.55;
+      this.rightArm.rotation.x = -1.55;
+      this.leftUpperLeg.rotation.x = 0;
+      this.rightUpperLeg.rotation.x = 0;
+    }
   }
 
   private executeGroundPass(ball: SoccerBall) {
